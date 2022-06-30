@@ -34,7 +34,7 @@ class Ui(QtWidgets.QMainWindow):
         self.variableList = []
         
         # Database dictionary
-        self.variableDict = {}
+        self.dbcDict = {}
         
         # List of current data
         self.currentData = []
@@ -119,44 +119,56 @@ class Ui(QtWidgets.QMainWindow):
         self.plainTextEdit.appendPlainText("Start processing file")
         
         # Reset timer
-        startProcessingTime = time.perf_counter()
+        startProcessingTime = datetime.now()
         
         # Read data info
         for rawData in self.currentData:        
             
-            # # Try to get trade data
-            # try:
-            #     # Create new excel book
-            #     currVar = self.variableDict.get(rawData.trace)
-            # except Exception as e: 
-            #     print(e)
-            # else:
-            #     pass
+            # Try to get trade data
+            try:
+                # Get trace information from dictionary
+                currTrace = self.dbcDict.get(rawData.trace)
+            except Exception as e: 
+                print(e)
+            else:
+                # print("Trace found: " + str(currTrace))
+                self.DecodeData(rawData, currTrace)
             
             
-            # Find can tracce on data list
-            for i in self.variableList:
-                # print("i.tramaNumber: " + (i.tramaNumber) + " rawData.trace: " + rawData.trace)
-                if i.tramaNumber == rawData.trace:
+            # # Find can tracce on data list
+            # for i in self.variableList:
+            #     # print("i.tramaNumber: " + (i.tramaNumber) + " rawData.trace: " + rawData.trace)
+            #     if i.tramaNumber == rawData.trace:
                      
-                      # print ("Founded trace!")
+            #           # print ("Founded trace!")
                      
-                      # Get index of matched trace
-                      self.traceIndex = self.variableList.index(i)
+            #           # Get index of matched trace
+            #           self.traceIndex = self.variableList.index(i)
                      
-                      # Add data 
-                      self.variableList[self.traceIndex].AppendNewData(rawData.time, rawData.message)
-                      # print(self.variableList[self.traceIndex].data.timeStamp)
+            #           # Add data 
+            #           self.variableList[self.traceIndex].AppendNewData(rawData.time, rawData.message)
+            #           # print(self.variableList[self.traceIndex].data.timeStamp)
         
         # End time
-        self.plainTextEdit.appendPlainText("Time processing file: " + str(time.perf_counter() - startProcessingTime))
+        self.plainTextEdit.appendPlainText("Time processing file: " + str(datetime.now() - startProcessingTime))
         
         # Export data to file
         self.ExportResults()
-            
+    
+    def DecodeData(self, rawData, trace):
+        
+        # For all variables in trace
+        for variable in trace:
+            # print("Time: " + rawData.time + " Data: " + rawData.message + " Type: " + str(type(rawData.message)))
+            variable.AppendNewData(rawData.time, self.CalculateValue(variable, rawData.message))
+            #print("Time: " + rawData.time + " Data: " + str(self.CalculateValue(variable, rawData.message)))
+        
     def ExportResults(self):
         
         self.plainTextEdit.appendPlainText("Exporting results")
+        
+        # Reset timer
+        startProcessingTime = datetime.now()
         
         # Open file
         try:
@@ -179,24 +191,27 @@ class Ui(QtWidgets.QMainWindow):
                 # Write data column title
                 worksheet.write(0, columnCounter + 1, variable.variableName + "_data")
                 
-                # File counter                
-                fileCounter = 1
+                # Row counter                
+                rowCounter = 1
                 
                 # Write time data column
                 for data in variable.data:
                     # Write time data
-                    worksheet.write(fileCounter, columnCounter, data.timeStamp)
+                    worksheet.write(rowCounter, columnCounter, data.timeStamp)
                     
                     # Write data
                     # print("data: " + data.variableData)
-                    worksheet.write(fileCounter, columnCounter + 1, str(self.CalculateValue(variable, data.variableData)))
+                    worksheet.write(rowCounter, columnCounter + 1, str(data.variableData))
                     
-                    fileCounter += 1
+                    rowCounter += 1
                 
                 columnCounter += 2
                 
             # Close file
             workbook.close()
+            
+            # End time
+            self.plainTextEdit.appendPlainText("Time exporting to excel file: " + str(datetime.now() - startProcessingTime))
         
     # def contains(self, list, filter):
     #     for x in list:
@@ -210,8 +225,6 @@ class Ui(QtWidgets.QMainWindow):
         
         # Preprocess HEX
         
-        
-        # print(hexValue)
         # Convert string to HEX and hex to bin
         value = bin(int(hexValue, base = 16))
         
@@ -299,6 +312,8 @@ class Ui(QtWidgets.QMainWindow):
                 self.currentKeyTramaNumber = line.split(" ")[1]
                 self.currentKeyTramaName = line.split(" ")[2]
                 
+                
+                self.dbcDict[self.currentKeyTramaNumber] = []
                 # print(self.currentKeyTramaNumber)
                 
                 # self.tramaDict[self.currentKeyTrama] = []
@@ -314,6 +329,7 @@ class Ui(QtWidgets.QMainWindow):
                 
                 # Add variable to the list
                 self.variableList.append(self.currItem)
+                self.dbcDict[self.currentKeyTramaNumber].append(self.currItem)
                 
                 # Set bit info
                 self.SetLineBitInfo(line, self.currItem)
@@ -325,10 +341,10 @@ class Ui(QtWidgets.QMainWindow):
                 self.currentKeyTramaNumber = ""
                 self.currentKeyTramaName = ""
         
-        self.CreateDatabaseDictionary(self.variableList)
+        # self.CreateDatabaseDictionary(self.variableList)
         
         # Debug
-        # self.ReadDict(self.variableDict)     
+        # self.ReadDict(self.dbcDict)     
             
     def CreateDatabaseDictionary(self, variableList):
         
@@ -352,14 +368,15 @@ class Ui(QtWidgets.QMainWindow):
     # Auxiliary method to show dictionary data 
     def ReadDict(self, readDict):
         
-        # print dictionary
-        print(readDict)
+        # Print dictionary
+        #print(readDict)
          
-        # print length of dictionary
-        print("Length:", len(readDict))
-         
-        # print type
-        print(type(readDict))
+        # Print keys
+        for key, value in readDict.items():
+            print("Trace: " + key)
+            # Print trace variables
+            for var in value:
+                print("  Var name: " + var.variableName)
     
     # Method to get and set bit info from a line to the given object
     def SetLineBitInfo(self, line, targetObj):
