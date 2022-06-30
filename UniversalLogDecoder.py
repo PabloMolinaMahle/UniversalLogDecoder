@@ -103,7 +103,15 @@ class Ui(QtWidgets.QMainWindow):
     def LoadFileData(self):
         self.plainTextEdit.appendPlainText("Reading data file: " + self.dataFile[0])
         self.currentDatafile = open(self.dataFile[0],"r")
+        
+        # Reset timer
+        startProcessingTime = datetime.now()
+        
+        # Read data and convert to standard format
         self.currentData = M20Datalogger.ReadData(M20Datalogger, self.dataFile[0])
+        
+        # End time
+        self.plainTextEdit.appendPlainText("Time loading and pre-processing file: " + str(datetime.now() - startProcessingTime))
         
         # for item in self.currentData:
         #      print (item.time + " " + item.trace + " " + item.message)
@@ -388,37 +396,12 @@ class Ui(QtWidgets.QMainWindow):
                         
                         # Write variable data
                         for variableData in traceVariable.varData:
-                            worksheet.write(rowCounter, columnCounter, str(variableData))
+                            # Write data replacing "." by ","
+                            worksheet.write(rowCounter, columnCounter, str(variableData).replace(".", ","))
                             rowCounter += 1 # Counter increment for next row
                         
                         # Increase colum counter for the next variable column
                         columnCounter += 1
-                        
-            
-            
-            # # For each variable
-            # for variable in self.variableList:
-            #     # Write time column title
-            #     worksheet.write(0, columnCounter, variable.variableName + "_time")
-                
-            #     # Write data column title
-            #     worksheet.write(0, columnCounter + 1, variable.variableName + "_data")
-                
-            #     # Row counter                
-            #     rowCounter = 1
-                
-            #     # Write time data column
-            #     for data in variable.data:
-            #         # Write time data
-            #         worksheet.write(rowCounter, columnCounter, data.timeStamp)
-                    
-            #         # Write data
-            #         # print("data: " + data.variableData)
-            #         worksheet.write(rowCounter, columnCounter + 1, str(data.variableData))
-                    
-            #         rowCounter += 1
-                
-            #     columnCounter += 2
                 
             # Close file
             workbook.close()
@@ -426,16 +409,6 @@ class Ui(QtWidgets.QMainWindow):
             # End time
             self.plainTextEdit.appendPlainText("Time exporting to excel file: " + str(datetime.now() - startProcessingTime))
         
-    # def contains(self, list, filter):
-    #     for x in list:
-    #         print("X: " + str(x) + " Index: " + str(list.index(x)))
-    #         if filter(x):
-    #             print("X: " + x + " Index: " + list.index(x))
-    #             return list.index(x)
-    #     raise ValueError
-    
-   
-
     ##########################################################################################################################################
     ###
     ###                                                         Auxiliary methods

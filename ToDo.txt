@@ -3,3 +3,7 @@
 	
 - Modulo para leer la info de variables y trama del DBC
 
+# Post procesado de excel
+- Pintar títulos de las celdas de excel. El título del tiempo en otro color
+- Añadir filtro automáticamente a la primera fila
+- Añadir color de fondo a las filas, impares blancas, pares grises
