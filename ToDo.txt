@@ -1,0 +1,5 @@
+- Añadir una comprobación antes de ejecutar el código
+	Comprobación de que la data base y el/los archivos de datos están seleccionados.
+	
+- Modulo para leer la info de variables y trama del DBC
+
