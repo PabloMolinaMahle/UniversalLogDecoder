@@ -9,6 +9,8 @@ from PyQt5 import QtWidgets, uic
 import sys
 import xlsxwriter
 import time
+from textwrap import wrap
+
 
 import glob
 import os
@@ -143,11 +145,6 @@ class Ui(QtWidgets.QMainWindow):
         #             print(self.CalculateValue(variable, "000000A5A4416B24"))
 
                 
-                
-        
-        
-        
-        
         
         self.plainTextEdit.appendPlainText("Start processing file")
         
@@ -273,8 +270,24 @@ class Ui(QtWidgets.QMainWindow):
         # print (hexValue)
         # Preprocess HEX
         
+        hexValueSplited = wrap(hexValue, 2)
+        
+        
+        # print(str(hexValueSplited) + " Type: " + str(type(hexValueSplited)))
+        
+        hexValueSplited = hexValueSplited[::-1]
+        
+        # print(hexValueSplited)
+        
+        hexValueReversed = ""
+        
+        for block in hexValueSplited:
+            hexValueReversed += block
+        
         # Convert string to HEX and hex to bin
-        value = bin(int(hexValue, base = 16))
+        value = bin(int(hexValueReversed, base = 16))
+        
+        
         
         # print(value)
         # Divide with startbit and lenght (bin -> str , truncate, str -> bin)
@@ -298,6 +311,8 @@ class Ui(QtWidgets.QMainWindow):
         # print("int value" + str(value) + " + offset: " + variable.offset)
         # Apply obset
         value += float(variable.offset)
+        
+        # print("Final value: " + str(value))
         
         return value  
      
@@ -393,6 +408,10 @@ class Ui(QtWidgets.QMainWindow):
         # Reset timer
         startProcessingTime = datetime.now()
         
+        
+        
+        
+        
         # Open file
         try:
             # Create new excel book
@@ -402,6 +421,18 @@ class Ui(QtWidgets.QMainWindow):
         else:
             # Add worksheet to book
             worksheet = workbook.add_worksheet()
+            
+            # Cell format
+            
+            # TimeStamp title format
+            timeStampTitleFormat = workbook.add_format()
+            timeStampTitleFormat.set_bg_color("#8DEEEE")
+            timeStampTitleFormat.set_rotation(90)
+            
+            # Variable title format
+            variableTitleFormat = workbook.add_format()
+            variableTitleFormat.set_bg_color("#B4EEB4")
+            variableTitleFormat.set_rotation(70)
             
             # Column counter
             columnCounter = 0
@@ -419,7 +450,7 @@ class Ui(QtWidgets.QMainWindow):
                 
                 if len(self.dbcDict[trace].traceTimeStamp) > 0:
                     # Write time column title
-                    worksheet.write(0, columnCounter, self.dbcDict[trace].traceName + "_time")
+                    worksheet.write(0, columnCounter, self.dbcDict[trace].traceName + "_time", timeStampTitleFormat)
                     
                     # Row counter                
                     rowCounter = 1
@@ -435,7 +466,7 @@ class Ui(QtWidgets.QMainWindow):
                     # Write variables
                     for traceVariable in self.dbcDict[trace].traceVariables:
                         # Write variable title
-                        worksheet.write(0, columnCounter, traceVariable.variableName)
+                        worksheet.write(0, columnCounter, traceVariable.variableName, variableTitleFormat)
                         
                         # Row counter reset            
                         rowCounter = 1
@@ -443,11 +474,14 @@ class Ui(QtWidgets.QMainWindow):
                         # Write variable data
                         for variableData in traceVariable.varData:
                             # Write data replacing "." by ","
-                            worksheet.write(rowCounter, columnCounter, str(variableData).replace(".", ","))
+                            worksheet.write_number(rowCounter, columnCounter, variableData)
                             rowCounter += 1 # Counter increment for next row
                         
                         # Increase colum counter for the next variable column
                         columnCounter += 1
+                
+            # Block panels
+            worksheet.freeze_panes(1, 0)
                 
             # Close file
             workbook.close()
