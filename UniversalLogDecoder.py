@@ -124,6 +124,31 @@ class Ui(QtWidgets.QMainWindow):
     
     def StartProcess(self):
         
+            # self.ReadDict(self.dbcDict)
+        
+        # # Try to get trade data
+        #     try:
+        #         # Get trace information from dictionary
+        #         currTrace = self.dbcDict.get("272")
+        #         print(currTrace)
+        #     except Exception as e: 
+        #         print(e)
+        #     else:
+        #         # print("Trace found: " + str(currTrace))
+        #         # for variable in currTrace.traceVariables:
+        #         #     # Append data to the variable
+        #         #     print(self.CalculateValue(variable, "246B41A4A5000000"))
+                    
+        #         for variable in currTrace.traceVariables:    
+        #             print(self.CalculateValue(variable, "000000A5A4416B24"))
+
+                
+                
+        
+        
+        
+        
+        
         self.plainTextEdit.appendPlainText("Start processing file")
         
         # Reset timer
@@ -143,19 +168,19 @@ class Ui(QtWidgets.QMainWindow):
                 self.DecodeData(rawData, currTrace)
             
             
-            # # Find can tracce on data list
-            # for i in self.variableList:
-            #     # print("i.tramaNumber: " + (i.tramaNumber) + " rawData.trace: " + rawData.trace)
-            #     if i.tramaNumber == rawData.trace:
+        #     # # Find can tracce on data list
+        #     # for i in self.variableList:
+        #     #     # print("i.tramaNumber: " + (i.tramaNumber) + " rawData.trace: " + rawData.trace)
+        #     #     if i.tramaNumber == rawData.trace:
                      
-            #           # print ("Founded trace!")
+        #     #           # print ("Founded trace!")
                      
-            #           # Get index of matched trace
-            #           self.traceIndex = self.variableList.index(i)
+        #     #           # Get index of matched trace
+        #     #           self.traceIndex = self.variableList.index(i)
                      
-            #           # Add data 
-            #           self.variableList[self.traceIndex].AppendNewData(rawData.time, rawData.message)
-            #           # print(self.variableList[self.traceIndex].data.timeStamp)
+        #     #           # Add data 
+        #     #           self.variableList[self.traceIndex].AppendNewData(rawData.time, rawData.message)
+        #     #           # print(self.variableList[self.traceIndex].data.timeStamp)
         
         # End time
         self.plainTextEdit.appendPlainText("Time processing file: " + str(datetime.now() - startProcessingTime))
@@ -233,105 +258,127 @@ class Ui(QtWidgets.QMainWindow):
             # variable.AppendNewData(rawData.time, self.CalculateValue(variable, rawData.message))
             #print("Time: " + rawData.time + " Data: " + str(self.CalculateValue(variable, rawData.message)))
 
-     ##########################################################################################################################################
-     ###
-     ###                                                         Process methods
-     ###
-     ##########################################################################################################################################      
+    ##########################################################################################################################################
+    ###
+    ###                                                         Process methods
+    ###
+    ##########################################################################################################################################      
      
     def CalculateValue(self, variable, hexValue):
-         
-         # Preprocess HEX
-         
-         # Convert string to HEX and hex to bin
-         value = bin(int(hexValue, base = 16))
-         
-         # print(value)
-         # Divide with startbit and lenght (bin -> str , truncate, str -> bin)
-         
-         # print("Trama: " + variable.tramaNumber + " Variable name: " + variable.variableName + "Start: " + variable.startBit + " End: " + str(int(variable.startBit)) + str(int(variable.bitLenght)))
-         # value = value[int(variable.startBit) + 2 :] # delete firsts elements
-         # value = value[:int(variable.startBit) + int(variable.bitLenght)]
-         value = self.SplitBinaryNumber(value, variable.startBit, variable.bitLenght)
-         
-         # print(value)
-         # Convert to decimal
-         value = int(value, 2)
-         
-         # print(value)
-         # Apply gain
-         value *= float(variable.gain)
-         
-         # print(value)
-         # Apply obset
-         value += float(variable.offset)
-         
-         return value  
+        
+        # Store the message lenght in binary (hex*4)
+        messageLength = 4*len(hexValue)
+        # print("Message lenght: " + str(messageLength))
+        
+        # print (hexValue)
+        # Preprocess HEX
+        
+        # Convert string to HEX and hex to bin
+        value = bin(int(hexValue, base = 16))
+        
+        # print(value)
+        # Divide with startbit and lenght (bin -> str , truncate, str -> bin)
+        
+        # print("Trama: " + variable.tramaNumber + " Variable name: " + variable.variableName + "Start: " + variable.startBit + " End: " + str(int(variable.startBit)) + str(int(variable.bitLenght)))
+        # value = value[int(variable.startBit) + 2 :] # delete firsts elements
+        # value = value[:int(variable.startBit) + int(variable.bitLenght)]
+        
+        # print("Value: " + str(value) + " Tipe: " + str(type(value)) + " Start bit: " + variable.startBit + " Bit lenght: " + variable.bitLenght)
+        
+        value = self.SplitBinaryNumber(value, variable.startBit, variable.bitLenght, messageLength)
+        
+        # print("Value: " + str(value) + " Tipe: " + str(type(value)))
+        # Convert to decimal
+        value = int(value, 2)
+        
+        # print("int value:" + str(value) + " * gain: " + variable.gain)
+        # Apply gain
+        value *= float(variable.gain)
+        
+        # print("int value" + str(value) + " + offset: " + variable.offset)
+        # Apply obset
+        value += float(variable.offset)
+        
+        return value  
      
-    def SplitBinaryNumber(self, numberToSplit, startIndex, lenght):
+    def SplitBinaryNumber(self, numberToSplit, startIndex, lenght, messageLength):
          
-         strResult = ""
-         
-         numberToSplit = numberToSplit[2:]
-         numberToSplit = numberToSplit.zfill(64)
-         
-         # print("String: " + numberToSplit + " Start: " + startIndex + " Length: " + lenght)
-         
-         for i in range(int(startIndex), int(startIndex) + int(lenght)):
-             strResult += numberToSplit[i]
-         
-         return strResult
+        strResult = ""
+        
+        # print(numberToSplit)
+        
+        numberToSplit = numberToSplit[2:]
+        
+        # print(numberToSplit)
+        numberToSplit = numberToSplit.zfill(messageLength)
+        
+        # print(numberToSplit)
+        
+        # print(numberToSplit)
+        
+        # print("String: " + numberToSplit + " Start: " + startIndex + " Length: " + lenght)
+        
+        # for i in range(int(startIndex), int(startIndex) + int(lenght)):
+        #     strResult += numberToSplit[i]
+        
+        
+        for i in range(messageLength - int(startIndex) - int(lenght), messageLength - int(startIndex)):
+            strResult += numberToSplit[i]
+        
+        # print("strResult: " + strResult)
+        
+        return strResult
+   
     
-     
-     #     # # If no database file is selected
-     #     # if self.dbcFile == "" or self.dbcFile == '(\",\")':
-     #     #     self.plainTextEdit.appendPlainText("dbc is not selected")
-     #     #     self.plainTextEdit.appendPlainText(str(self.dbcFile))
-         
-     #     # # If no data file is selected
-     #     # if self.dataFile == "" or self.dataFile == '(\",\")':
-     #     #     self.plainTextEdit.appendPlainText("data file is not selected")
-     #     #     self.plainTextEdit.appendPlainText(str(self.dataFile))
-             
-     #     #if:
-     #     self.plainTextEdit.appendPlainText("Start processing...")
-         
-     #
-    
-         
-     #     #self.ProcessDatabase()
-     #     #self.ReadDict(self.Variablelist)    
+    #     # # If no database file is selected
+    #     # if self.dbcFile == "" or self.dbcFile == '(\",\")':
+    #     #     self.plainTextEdit.appendPlainText("dbc is not selected")
+    #     #     self.plainTextEdit.appendPlainText(str(self.dbcFile))
+        
+    #     # # If no data file is selected
+    #     # if self.dataFile == "" or self.dataFile == '(\",\")':
+    #     #     self.plainTextEdit.appendPlainText("data file is not selected")
+    #     #     self.plainTextEdit.appendPlainText(str(self.dataFile))
+            
+    #     #if:
+    #     self.plainTextEdit.appendPlainText("Start processing...")
+        
+    #
+   
+        
+    #     #self.ProcessDatabase()
+    #     #self.ReadDict(self.Variablelist)    
      
      # Method to get and set bit info from a line to the given object
     def SetLineBitInfo(self, line, targetObj):
          
-         # Process bit info
-         self.currentVariableBitInfo = line.split(" ")[4] # Result example: 0|8@1+
-         self.currentVariableBitPos = self.currentVariableBitInfo.split("|")[0] 
-         self.currentVariableBitLength = self.currentVariableBitInfo.split("|")[1].split("@")[0]
-         
-         # Set variable bit info
-         targetObj.SetBitInfo(self.currentVariableBitPos, self.currentVariableBitLength)
+        # Process bit info
+        self.currentVariableBitInfo = line.split(" ")[4] # Result example: 0|8@1+
+        self.currentVariableBitPos = self.currentVariableBitInfo.split("|")[0] 
+        self.currentVariableBitLength = self.currentVariableBitInfo.split("|")[1].split("@")[0]
+        
+        # Set variable bit info
+        targetObj.SetBitInfo(self.currentVariableBitPos, self.currentVariableBitLength)
      
      # Method to get and set gain and obsset from a line to given object
     def SetLineBitAdjust(self, line, targetObj):
          
-         # Process bit adjust (gain and offset)
-         self.currentVariableBitAdjust = line.split(" ")[5] # Result example: (1,-100)
-         
-         # Remove first caracter
-         self.currentVariableBitAdjust = self.currentVariableBitAdjust[1:] # Result example: 1,-100)
-         # Remove last caracter
-         self.currentVariableBitAdjust = self.currentVariableBitAdjust[:-1] # Result example: 1,-100
-         
-         # print(self.currentVariableBitAdjust)
-         
-         # Split data
-         self.currentGain = self.currentVariableBitAdjust.split(",")[0]
-         self.currentOffset  = self.currentVariableBitAdjust.split(",")[1]
-         
-         # Set bit adjust
-         targetObj.SetGainOffset(self.currentGain, self.currentOffset)
+        # Process bit adjust (gain and offset)
+        self.currentVariableBitAdjust = line.split(" ")[5] # Result example: (1,-100)
+        
+        # Remove first caracter
+        self.currentVariableBitAdjust = self.currentVariableBitAdjust[1:] # Result example: 1,-100)
+        # Remove last caracter
+        self.currentVariableBitAdjust = self.currentVariableBitAdjust[:-1] # Result example: 1,-100
+        
+        # print(self.currentVariableBitAdjust)
+        
+        # Split data
+        self.currentGain = self.currentVariableBitAdjust.split(",")[0]
+        self.currentOffset  = self.currentVariableBitAdjust.split(",")[1]
+        
+        # Set bit adjust
+        targetObj.SetGainOffset(self.currentGain, self.currentOffset)
 
     ##########################################################################################################################################
     ###
@@ -360,10 +407,9 @@ class Ui(QtWidgets.QMainWindow):
             columnCounter = 0
             
             # Debug
-            print("DBC lenght: " + str(len(self.dbcDict)))
-            for key in self.dbcDict:
-                print("Trace: " + self.dbcDict[key].traceNumber + " number of time data: " + str(len(self.dbcDict[key].traceTimeStamp)))
-            
+            # print("DBC lenght: " + str(len(self.dbcDict)))
+            # for key in self.dbcDict:
+            #     print("Trace: " + self.dbcDict[key].traceNumber + " number of time data: " + str(len(self.dbcDict[key].traceTimeStamp)))
             
             # Trace
             for trace in self.dbcDict:
