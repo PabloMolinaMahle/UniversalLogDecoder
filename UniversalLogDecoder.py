@@ -238,7 +238,39 @@ class Ui(QtWidgets.QMainWindow):
                 self.currentKeyTraceName = ""
         
         # Debug
-        # self.ReadDict(self.dbcDict)     
+        # self.ReadVariableDict(self.dbcDict)     
+    
+    # Method to get and set bit info from a line to the given object
+    def SetLineBitInfo(self, line, targetObj):
+        
+        # Process bit info
+        self.currentVariableBitInfo = line.split(" ")[4] # Result example: 0|8@1+
+        self.currentVariableBitPos = self.currentVariableBitInfo.split("|")[0] 
+        self.currentVariableBitLength = self.currentVariableBitInfo.split("|")[1].split("@")[0] # Result example 8@1+
+        self.currentVariableByteOrder = self.currentVariableBitInfo.split("|")[1].split("@")[1][0] # Result example 1
+        
+        # Set variable bit info
+        targetObj.SetBitInfo(self.currentVariableBitPos, self.currentVariableBitLength, self.currentVariableByteOrder)
+    
+    # Method to get and set gain and obsset from a line to given object
+    def SetLineBitAdjust(self, line, targetObj):
+        
+        # Process bit adjust (gain and offset)
+        self.currentVariableBitAdjust = line.split(" ")[5] # Result example: (1,-100)
+        
+        # Remove first caracter
+        self.currentVariableBitAdjust = self.currentVariableBitAdjust[1:] # Result example: 1,-100)
+        # Remove last caracter
+        self.currentVariableBitAdjust = self.currentVariableBitAdjust[:-1] # Result example: 1,-100
+        
+        # print(self.currentVariableBitAdjust)
+        
+        # Split data
+        self.currentGain = self.currentVariableBitAdjust.split(",")[0]
+        self.currentOffset  = self.currentVariableBitAdjust.split(",")[1]
+        
+        # Set bit adjust
+        targetObj.SetGainOffset(self.currentGain, self.currentOffset)
     
     def DecodeData(self, rawData, trace):
         
@@ -261,23 +293,18 @@ class Ui(QtWidgets.QMainWindow):
     ###
     ##########################################################################################################################################      
      
+    # Method to calculat the decimal value of a variable (variable) in a can message (hexValue)
     def CalculateValue(self, variable, hexValue):
         
         # Store the message lenght in binary (hex*4)
         messageLength = 4*len(hexValue)
-        # print("Message lenght: " + str(messageLength))
         
-        # print (hexValue)
         # Preprocess HEX
-        
+        # Divide HEX message in groups of two units
         hexValueSplited = wrap(hexValue, 2)
         
-        
-        # print(str(hexValueSplited) + " Type: " + str(type(hexValueSplited)))
-        
+        # Invert the order of the groups
         hexValueSplited = hexValueSplited[::-1]
-        
-        # print(hexValueSplited)
         
         hexValueReversed = ""
         
@@ -286,29 +313,24 @@ class Ui(QtWidgets.QMainWindow):
         
         # Convert string to HEX and hex to bin
         value = bin(int(hexValueReversed, base = 16))
-        
-        
-        
-        # print(value)
-        # Divide with startbit and lenght (bin -> str , truncate, str -> bin)
-        
-        # print("Trama: " + variable.tramaNumber + " Variable name: " + variable.variableName + "Start: " + variable.startBit + " End: " + str(int(variable.startBit)) + str(int(variable.bitLenght)))
-        # value = value[int(variable.startBit) + 2 :] # delete firsts elements
-        # value = value[:int(variable.startBit) + int(variable.bitLenght)]
-        
-        # print("Value: " + str(value) + " Tipe: " + str(type(value)) + " Start bit: " + variable.startBit + " Bit lenght: " + variable.bitLenght)
-        
+
+        # Get the binary number of the variable
         value = self.SplitBinaryNumber(value, variable.startBit, variable.bitLenght, messageLength)
         
-        # print("Value: " + str(value) + " Tipe: " + str(type(value)))
+        print("Current number: " + str(value) + " Byte order: " + variable.byteOrder)
+        
+        # Apply bit order (1 = intel, 0 = motorola)
+        if variable.byteOrder == "0":
+            # If is motorola order, invert the string
+            print("Variable with inverted byte order found")
+            value = self.InvertByteOrder(value)
+        
         # Convert to decimal
         value = int(value, 2)
         
-        # print("int value:" + str(value) + " * gain: " + variable.gain)
         # Apply gain
         value *= float(variable.gain)
         
-        # print("int value" + str(value) + " + offset: " + variable.offset)
         # Apply obset
         value += float(variable.offset)
         
@@ -316,6 +338,7 @@ class Ui(QtWidgets.QMainWindow):
         
         return value  
      
+    # Method to extract the binary value of the current variable
     def SplitBinaryNumber(self, numberToSplit, startIndex, lenght, messageLength):
          
         strResult = ""
@@ -344,56 +367,51 @@ class Ui(QtWidgets.QMainWindow):
         
         return strResult
    
-    
-    #     # # If no database file is selected
-    #     # if self.dbcFile == "" or self.dbcFile == '(\",\")':
-    #     #     self.plainTextEdit.appendPlainText("dbc is not selected")
-    #     #     self.plainTextEdit.appendPlainText(str(self.dbcFile))
+    # Method to invert Byte order for Motorola type variables
+    def InvertByteOrder(self, numberToInvert):
+                
+        # print("Start number: " + str(numberToInvert))
         
-    #     # # If no data file is selected
-    #     # if self.dataFile == "" or self.dataFile == '(\",\")':
-    #     #     self.plainTextEdit.appendPlainText("data file is not selected")
-    #     #     self.plainTextEdit.appendPlainText(str(self.dataFile))
-            
-    #     #if:
-    #     self.plainTextEdit.appendPlainText("Start processing...")
+        # str to hex
+        numberToInvert = hex(int(numberToInvert, 2))
         
-    #
-   
+        # print("Hex number: " + str(numberToInvert))
         
-    #     #self.ProcessDatabase()
-    #     #self.ReadDict(self.Variablelist)    
+        # Remove 0x letter of hex number
+        numberToInvert = numberToInvert[2:]
+        # print("Remove 0x from hex: " + str(numberToInvert))
+        
+        # Split in groups
+        numberToInvert = wrap(numberToInvert, 2)
+        
+        # print("Splited number: " + str(numberToInvert))
+        
+        # Invert order
+        numberToInvert = numberToInvert[::-1]
+        # print("Inverted number list: " + str(numberToInvert))
+        
+        invertedNumber = ""
+        
+        # Concatenate splited hex
+        for block in numberToInvert:
+            invertedNumber += block
+        
+        # print("Inverted number concatenated: " + str(invertedNumber))
+        
+        # Convert to binary
+        invertedNumber = int(invertedNumber, 16)
+        # print("Convert to dec: " + str(invertedNumber))
+        
+        # Convert to bin
+        invertedNumber = bin(invertedNumber)
+        # print("Convert to bin: " + str(invertedNumber))
+                
+        # Remove 0b letter of hex number
+        invertedNumber = invertedNumber[2:]
+        # print("Remove 0b from bin: " + str(invertedNumber))
+        
+        return invertedNumber
      
-     # Method to get and set bit info from a line to the given object
-    def SetLineBitInfo(self, line, targetObj):
-         
-        # Process bit info
-        self.currentVariableBitInfo = line.split(" ")[4] # Result example: 0|8@1+
-        self.currentVariableBitPos = self.currentVariableBitInfo.split("|")[0] 
-        self.currentVariableBitLength = self.currentVariableBitInfo.split("|")[1].split("@")[0]
-        
-        # Set variable bit info
-        targetObj.SetBitInfo(self.currentVariableBitPos, self.currentVariableBitLength)
-     
-     # Method to get and set gain and obsset from a line to given object
-    def SetLineBitAdjust(self, line, targetObj):
-         
-        # Process bit adjust (gain and offset)
-        self.currentVariableBitAdjust = line.split(" ")[5] # Result example: (1,-100)
-        
-        # Remove first caracter
-        self.currentVariableBitAdjust = self.currentVariableBitAdjust[1:] # Result example: 1,-100)
-        # Remove last caracter
-        self.currentVariableBitAdjust = self.currentVariableBitAdjust[:-1] # Result example: 1,-100
-        
-        # print(self.currentVariableBitAdjust)
-        
-        # Split data
-        self.currentGain = self.currentVariableBitAdjust.split(",")[0]
-        self.currentOffset  = self.currentVariableBitAdjust.split(",")[1]
-        
-        # Set bit adjust
-        targetObj.SetGainOffset(self.currentGain, self.currentOffset)
 
     ##########################################################################################################################################
     ###
@@ -516,8 +534,10 @@ class Ui(QtWidgets.QMainWindow):
         #     print(item, '->', dictToRead[item].ShowTrama())
         
         # Show list data
-        for item in dictToRead:
-            print(item.ShowVariableData()) 
+        for trace in dictToRead:
+            print("Trace: " + dictToRead[trace].traceNumber + " Trace name: " + dictToRead[trace].traceName)
+            for var in dictToRead[trace].traceVariables: 
+                print(var.ShowVariableData()) 
             
                    
         
