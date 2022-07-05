@@ -3,6 +3,10 @@
 	
 - Modulo para leer la info de variables y trama del DBC
 
+- Try: convertir en float, si puede, hacerlo
+
+- Probar un log que tenga variables de orden Motorola (0)
+
 # Post procesado de excel
 - Pintar títulos de las celdas de excel. El título del tiempo en otro color
 - Añadir filtro automáticamente a la primera fila

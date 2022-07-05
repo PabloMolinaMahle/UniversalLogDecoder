@@ -317,12 +317,19 @@ class Ui(QtWidgets.QMainWindow):
         # Get the binary number of the variable
         value = self.SplitBinaryNumber(value, variable.startBit, variable.bitLenght, messageLength)
         
-        print("Current number: " + str(value) + " Byte order: " + variable.byteOrder)
+        # print("Current number: " + str(value) + " Byte order: " + variable.byteOrder)
         
         # Apply bit order (1 = intel, 0 = motorola)
         if variable.byteOrder == "0":
             # If is motorola order, invert the string
-            print("Variable with inverted byte order found")
+            self.plainTextEdit.appendPlainText("")
+            self.plainTextEdit.appendPlainText("#################################")
+            self.plainTextEdit.appendPlainText("WARNING!!!! : Variable with inverted byte order found: CHECK IF WORKS : Contact to pablo.molina@mahle.com")
+            self.plainTextEdit.appendPlainText("#################################")
+            self.plainTextEdit.appendPlainText("")
+            
+            print("Variable with inverted byte order found: CHECK IF WORKS")
+            
             value = self.InvertByteOrder(value)
         
         # Convert to decimal
