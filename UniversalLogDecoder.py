@@ -51,6 +51,7 @@ class Ui(QtWidgets.QMainWindow):
         self.startButton.clicked.connect(self.StartProcess)
         self.load_dbc.clicked.connect(self.LoadDBCdata)
         self.load_data.clicked.connect(self.LoadFileData)
+        self.decodeMessageButton.clicked.connect(self.DecodeMessage)
         
         # Subscribe to listWidget events
         # self.trama_listWidget.itemClicked.connect(self.trama_listWidget_itemClicked_event)
@@ -117,6 +118,34 @@ class Ui(QtWidgets.QMainWindow):
         
         # for item in self.currentData:
         #      print (item.time + " " + item.trace + " " + item.message)
+        
+    def DecodeMessage(self):
+        # Get message
+        messageToDecode = self.canMessageInput.text()
+        print("Message to decode: " + messageToDecode)
+        
+        # Get trace
+        messageTrace = self.canTraceInput.text()
+        print("Message trace: " + messageTrace)
+        
+        print("Trace: " + self.dbcDict[messageTrace].ShowTrace())
+        
+        self.plainTextEdit.appendPlainText("")
+        self.plainTextEdit.appendPlainText(self.dbcDict[messageTrace].ShowTraceName())
+        
+        # For each variable in the trace
+        for variable in self.dbcDict[messageTrace].traceVariables:
+            # "{:.2f}".format(float)
+            # self.plainTextEdit.appendPlainText("    Var name: " + variable.variableName + " Value: " + str(self.CalculateValue(variable, messageToDecode)))
+            self.plainTextEdit.appendPlainText("    Var name: " + variable.variableName + " Value: " + "{:.2f}".format(self.CalculateValue(variable, messageToDecode)))
+            print(" Var name: " + variable.variableName + " Value: " + str(self.CalculateValue(variable, messageToDecode)))
+        # tempVariable = self.CalculateValue(self.dbcDict[], )
+        
+        # Decode message
+        
+        # Print variable on plain text edit
+        # print("tempVariable: " + tempVariable)
+        
         
     ##########################################################################################################################################
     ###
@@ -433,10 +462,6 @@ class Ui(QtWidgets.QMainWindow):
         # Reset timer
         startProcessingTime = datetime.now()
         
-        
-        
-        
-        
         # Open file
         try:
             # Create new excel book
@@ -447,17 +472,17 @@ class Ui(QtWidgets.QMainWindow):
             # Add worksheet to book
             worksheet = workbook.add_worksheet()
             
-            # Cell format
+            ## Cell format
             
             # TimeStamp title format
             timeStampTitleFormat = workbook.add_format()
             timeStampTitleFormat.set_bg_color("#8DEEEE")
-            timeStampTitleFormat.set_rotation(90)
+            # timeStampTitleFormat.set_rotation(90)
             
             # Variable title format
             variableTitleFormat = workbook.add_format()
             variableTitleFormat.set_bg_color("#B4EEB4")
-            variableTitleFormat.set_rotation(70)
+            # variableTitleFormat.set_rotation(70)
             
             # Column counter
             columnCounter = 0
