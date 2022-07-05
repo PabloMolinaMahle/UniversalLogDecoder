@@ -7,7 +7,8 @@
 
 - Probar un log que tenga variables de orden Motorola (0)
 
-- Herramienta para convertir líneas individuales sin tener que ponerlas en un archivo
+#Herramienta para convertir líneas individuales sin tener que ponerlas en un archivo
+- Comprobar la longitud del hex introducido
 
 # Post procesado de excel
 - Pintar títulos de las celdas de excel. El título del tiempo en otro color

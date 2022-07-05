@@ -180,6 +180,8 @@ class Ui(QtWidgets.QMainWindow):
         # Reset timer
         startProcessingTime = datetime.now()
         
+        dataCounter = 0
+        
         # Read data info
         for rawData in self.currentData:        
             
@@ -191,7 +193,9 @@ class Ui(QtWidgets.QMainWindow):
                 print(e)
             else:
                 # print("Trace found: " + str(currTrace))
+                # print("Data number: " + str(dataCounter))
                 self.DecodeData(rawData, currTrace)
+                dataCounter += 1
             
             
         #     # # Find can tracce on data list
@@ -328,51 +332,57 @@ class Ui(QtWidgets.QMainWindow):
         # Store the message lenght in binary (hex*4)
         messageLength = 4*len(hexValue)
         
-        # Preprocess HEX
-        # Divide HEX message in groups of two units
-        hexValueSplited = wrap(hexValue, 2)
-        
-        # Invert the order of the groups
-        hexValueSplited = hexValueSplited[::-1]
-        
-        hexValueReversed = ""
-        
-        for block in hexValueSplited:
-            hexValueReversed += block
-        
-        # Convert string to HEX and hex to bin
-        value = bin(int(hexValueReversed, base = 16))
-
-        # Get the binary number of the variable
-        value = self.SplitBinaryNumber(value, variable.startBit, variable.bitLenght, messageLength)
-        
-        # print("Current number: " + str(value) + " Byte order: " + variable.byteOrder)
-        
-        # Apply bit order (1 = intel, 0 = motorola)
-        if variable.byteOrder == "0":
-            # If is motorola order, invert the string
-            self.plainTextEdit.appendPlainText("")
-            self.plainTextEdit.appendPlainText("#################################")
-            self.plainTextEdit.appendPlainText("WARNING!!!! : Variable with inverted byte order found: CHECK IF WORKS : Contact to pablo.molina@mahle.com")
-            self.plainTextEdit.appendPlainText("#################################")
-            self.plainTextEdit.appendPlainText("")
+        # Check if message is longer that the current variable
+        if messageLength < int(variable.startBit) + int(variable.bitLenght):
+            self.plainTextEdit.appendPlainText("Can message to short for this trace according DBC file")
+            return 0
+        else:   
+            # Preprocess HEX
+            # Divide HEX message in groups of two units
+            hexValueSplited = wrap(hexValue, 2)
             
-            print("Variable with inverted byte order found: CHECK IF WORKS")
+            # Invert the order of the groups
+            hexValueSplited = hexValueSplited[::-1]
             
-            value = self.InvertByteOrder(value)
+            hexValueReversed = ""
+            
+            for block in hexValueSplited:
+                hexValueReversed += block
+            
+            # Convert string to HEX and hex to bin
+            value = bin(int(hexValueReversed, base = 16))
+    
+            # Get the binary number of the variable
+            value = self.SplitBinaryNumber(value, variable.startBit, variable.bitLenght, messageLength)
+            
+            # print("Current number: " + str(value) + " Byte order: " + variable.byteOrder)
+            
+            # Apply bit order (1 = intel, 0 = motorola)
+            if variable.byteOrder == "0":
+                # If is motorola order, invert the string
+                self.plainTextEdit.appendPlainText("")
+                self.plainTextEdit.appendPlainText("#################################")
+                self.plainTextEdit.appendPlainText("WARNING!!!! : Variable with inverted byte order found: CHECK IF WORKS : Contact to pablo.molina@mahle.com")
+                self.plainTextEdit.appendPlainText("#################################")
+                self.plainTextEdit.appendPlainText("")
+                
+                print("Variable with inverted byte order found: CHECK IF WORKS")
+                
+                value = self.InvertByteOrder(value)
+            
+            # Convert to decimal
+            value = int(value, 2)
+            
+            # Apply gain
+            value *= float(variable.gain)
+            
+            # Apply obset
+            value += float(variable.offset)
+            
+            # print("Final value: " + str(value))
+            
+            return value  
         
-        # Convert to decimal
-        value = int(value, 2)
-        
-        # Apply gain
-        value *= float(variable.gain)
-        
-        # Apply obset
-        value += float(variable.offset)
-        
-        # print("Final value: " + str(value))
-        
-        return value  
      
     # Method to extract the binary value of the current variable
     def SplitBinaryNumber(self, numberToSplit, startIndex, lenght, messageLength):
@@ -397,7 +407,13 @@ class Ui(QtWidgets.QMainWindow):
         
         
         for i in range(messageLength - int(startIndex) - int(lenght), messageLength - int(startIndex)):
-            strResult += numberToSplit[i]
+            try:
+                strResult += numberToSplit[i]
+            except Exception as e: 
+                print(e)
+                self.plainTextEdit.appendPlainText("Message")
+            else:
+                strResult += numberToSplit[i]
         
         # print("strResult: " + strResult)
         
